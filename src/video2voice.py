@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-def extract_audio_from_video(video_dir, voice_dir, output_format="mp3"):
+def extract_audio_from_video(video_dir, voice_dir, output_format="wav"):
     # 确保输出目录存在
     if not os.path.exists(voice_dir):
         os.makedirs(voice_dir)
@@ -16,6 +16,8 @@ def extract_audio_from_video(video_dir, voice_dir, output_format="mp3"):
             # 使用 ffmpeg 提取音频
             command = f'ffmpeg -i "{video_path}" -vn -c:a libmp3lame -q:a 2 "{audio_path}"'
             subprocess.run(command, shell=True)
+
+
 
 if __name__ == "__main__":
     # 假设 video 和 voice 目录与脚本同级
