@@ -1,6 +1,13 @@
+#每次跑完，funasr会自动降级，不知道为什么。
+# pip install -U funasr
 import librosa
 import numpy as np
 from datetime import datetime, timedelta
+from funasr import AutoModel
+import os
+import json
+from funasr import AutoModel
+from funasr.utils.postprocess_utils import rich_transcription_postprocess
 
 
 # 解析时间字符串为秒
@@ -137,11 +144,130 @@ def merge_dicts(pitch_result, loudness_result):
     return merged_result
 # 输出合并后的结果
 
+
+def load_emotion2vec():
+    """
+    加载预训练的模型。
+
+    返回:
+        model: 加载好的模型实例。
+    """
+    model_id = "iic/emotion2vec_plus_large"
+    model = AutoModel(
+        model=model_id,
+        hub="ms",  # "ms" 或 "modelscope" 针对中国大陆用户；"hf" 或 "huggingface" 针对海外用户
+    )
+    return model
+
+def load_sensevoice():
+    model_dir = "iic/SenseVoiceSmall"
+
+    model = AutoModel(
+        model=model_dir,
+        trust_remote_code=True,
+        remote_code="./model.py",
+        vad_model="fsmn-vad",
+        vad_kwargs={"max_single_segment_time": 30000},
+        device="cuda:0",
+    )
+    return model
+
+def predict_emotion(model, wav_file):
+    """
+    使用给定的模型预测音频文件的情感。
+
+    参数:
+        model: 已加载的模型实例。
+        wav_file: 要分析的音频文件路径。
+
+    返回:
+        formatted_result: 格式化后的情感结果字符串。
+    """
+    rec_result = model.generate(wav_file, output_dir="./outputs", granularity="utterance", extract_embedding=False)
+
+    if not rec_result or not rec_result[0].get('scores') or not rec_result[0].get('labels'):
+        return "无法识别情感"
+
+    max_score = max(rec_result[0]['scores'])
+    max_index = rec_result[0]['scores'].index(max_score)
+    max_label = rec_result[0]['labels'][max_index]
+
+    formatted_result = f"The most possible emotion is {max_label} with score {max_score}"
+    return formatted_result
+
+
+def get_text(wav_file,model):
+    res = model.generate(
+        input=wav_file,
+        cache={},
+        language="auto",  # "zh", "en", "yue", "ja", "ko", "nospeech"
+        use_itn=True,
+        batch_size_s=60,
+        merge_vad=True,  #
+        merge_length_s=15,
+    )
+    text = rich_transcription_postprocess(res[0]["text"])
+    # print(text)
+    return text
+
+def process_wav_files(directory):
+    """
+    批量处理目录中的所有 .wav 文件
+
+    参数:
+        directory: 包含 .wav 文件的目录路径。
+    """
+    funasr_model = load_emotion2vec()
+    sensevoice_model = load_sensevoice()
+    results = []
+
+    for root, dirs, files in os.walk(directory):
+        for file_name in files:
+            if file_name.endswith('.wav'):
+                wav_file = os.path.join(root, file_name)
+                text_result = get_text(wav_file, sensevoice_model)
+                emo_result = predict_emotion(funasr_model, wav_file)
+                loudness_result = extract_loudness(wav_file)
+                pitch_result = extract_pitch(wav_file)
+                merged_result = merge_dicts(pitch_result, loudness_result)
+
+                result_dict = {
+                    "filename": os.path.basename(wav_file),
+                    "emotion": emo_result,
+                    "text":text_result,
+                    "basic_info": merged_result
+                }
+
+                results.append(result_dict)
+    return results
+
+
+
+
+
+if __name__ == "__main__":
+    input_directory = r"../data/voice"  # 替换为你的输入目录
+    output_json = r"./output_results.json"  # 替换为你想要保存的JSON文件路径
+
+    results=process_wav_files(input_directory)
+    with open(output_json, 'w', encoding='utf-8') as f:
+        json.dump(results, f, ensure_ascii=False, indent=4)
+
+"""
 # 示例调用
 if __name__ == "__main__":
-    audio_path = r"../data/voice/1DCnIad1Y0w.002.mp3"
-    loudness_result = extract_loudness(audio_path)
-    pitch_result = extract_pitch(audio_path)
+    model = load_model()
+    wav_file = r"../data/voice/1DCnIad1Y0w.002.wav"
+    emo_result = predict_emotion(model, wav_file)
+    loudness_result = extract_loudness(wav_file)
+    pitch_result = extract_pitch(wav_file)
     merged_result = merge_dicts(pitch_result, loudness_result)
     for key, value in merged_result.items():
         print(f"{key}\t Pitch: {value['Pitch']}\t Loudness: {value['Loudness']}")
+    print(emo_result)
+    result_dict = {
+        "filename": os.path.basename(wav_file),
+        "merged_result": merged_result,
+        "emotion": emo_result
+    }
+"""
