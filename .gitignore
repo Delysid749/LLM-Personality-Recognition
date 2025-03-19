@@ -2,3 +2,7 @@ opensmile-3.0.2-windows-x86_64
 .idea/
 .data/*
 data
+.ipynb_checkpoints
+unsloth_compiled_cache
+finetune/outputs
+lora_model
