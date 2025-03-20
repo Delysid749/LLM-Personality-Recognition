@@ -1,29 +1,25 @@
 #每次跑完，funasr会自动降级，不知道为什么。
 # pip install -U funasr
-import librosa
-import numpy as np
+import os
 from datetime import datetime, timedelta
 from funasr import AutoModel
-import os
-import json
-from funasr import AutoModel
 from funasr.utils.postprocess_utils import rich_transcription_postprocess
-
-
+import librosa
+import numpy as np
+from pydub import AudioSegment
+#获取音频时长
+def get_audio_duration(file_path):
+    return  AudioSegment.from_wav(file_path).duration_seconds
 # 解析时间字符串为秒
 def parse_time_to_seconds(time_str):
     t = datetime.strptime(time_str, "%M:%S.%f")
     delta = timedelta(minutes=t.minute, seconds=t.second, microseconds=t.microsecond)
     return delta.total_seconds()
-
-
 # 将秒数格式化为时间字符串
 def format_seconds_to_time(seconds):
     td = timedelta(seconds=seconds)
     time_str = str(td)[2:-3] if len(str(td)) > 7 else f"0{str(td)[:-3]}"
     return time_str
-
-
 # 读取文件内容到字典
 def read_file_to_dict(file_path, delimiter='\t'):
     result = {}
@@ -32,8 +28,6 @@ def read_file_to_dict(file_path, delimiter='\t'):
             key, value = line.strip().split(delimiter)
             result[key] = float(value) if delimiter == '\t' else value
     return result
-
-
 # 定义将频率转换为音高名称的函数
 def freq_to_note(freq):
     """将频率转换为音高名称"""
@@ -46,8 +40,7 @@ def freq_to_note(freq):
     octave = (semitone - 12) // 12
     note = notes[semitone % 12]
     return f"{note}{octave}"
-
-
+# 定义提取音高的函数
 def extract_pitch(file_path):
     """
     给定音频路径，提取并返回pitch_result字典
@@ -86,9 +79,7 @@ def extract_pitch(file_path):
         last_key = key
 
     return pitch_result
-
-
-
+# 定义提取响度的函数
 def extract_loudness(file_path):
     """
     给定音频路径，提取并返回响度结果字典 loudness_result
@@ -118,8 +109,6 @@ def extract_loudness(file_path):
         loudness_result[time_str] = round(db, 2)  # 保留两位小数
 
     return loudness_result
-
-
 # 合并字典
 def merge_dicts(pitch_result, loudness_result):
     merged_result = {}
@@ -142,9 +131,7 @@ def merge_dicts(pitch_result, loudness_result):
         }
 
     return merged_result
-# 输出合并后的结果
-
-
+# 加载情感模型
 def load_emotion2vec():
     """
     加载预训练的模型。
@@ -155,10 +142,11 @@ def load_emotion2vec():
     model_id = "iic/emotion2vec_plus_large"
     model = AutoModel(
         model=model_id,
-        hub="ms",  # "ms" 或 "modelscope" 针对中国大陆用户；"hf" 或 "huggingface" 针对海外用户
+        hub="ms",
+        disable_update=True# "ms" 或 "modelscope" 针对中国大陆用户；"hf" 或 "huggingface" 针对海外用户
     )
     return model
-
+# 加载语音识别模型
 def load_sensevoice():
     model_dir = "iic/SenseVoiceSmall"
 
@@ -169,9 +157,10 @@ def load_sensevoice():
         vad_model="fsmn-vad",
         vad_kwargs={"max_single_segment_time": 30000},
         device="cuda:0",
+        disable_update=True
     )
     return model
-
+# 应用情感模型预测情感
 def predict_emotion(model, wav_file):
     """
     使用给定的模型预测音频文件的情感。
@@ -194,8 +183,7 @@ def predict_emotion(model, wav_file):
 
     formatted_result = f"The most possible emotion is {max_label} with score {max_score}"
     return formatted_result
-
-
+# 应用语音识别模型识别文本
 def get_text(wav_file,model):
     res = model.generate(
         input=wav_file,
@@ -209,7 +197,7 @@ def get_text(wav_file,model):
     text = rich_transcription_postprocess(res[0]["text"])
     # print(text)
     return text
-
+# 旧版获取完整的音频特征文本
 def process_wav_files(directory):
     """
     批量处理目录中的所有 .wav 文件
@@ -240,12 +228,54 @@ def process_wav_files(directory):
 
                 results.append(result_dict)
     return results
+# 新版获取完整的音频特征文本
+def extract_audio_features(file_list:list,text_model,sar_model):
+    result = {}
+    for file in file_list:
+        file_path = "../data/voice/" + file
+        y, sr = librosa.load(file_path, sr=22000)
+        # 提取音调音高
+        f0, voiced_flag, voiced_probs = librosa.pyin(
+            y, sr=sr,
+            fmin=librosa.note_to_hz('C2'),
+            fmax=librosa.note_to_hz('C7')
+        )
+        f0 = np.nan_to_num(f0, nan=-1.0)
+        print(f"音频文件: {file_path}", end="\t")
+        print(f"采样率: {sr} Hz")
+        f0_list = f0.tolist()
+        f0_list = [x for x in f0_list if x != -1.0]
+        f0_mean = np.mean(f0_list)
+        f0_std = np.std(f0_list)
+        rms = librosa.feature.rms(y=y, frame_length=2048, hop_length=512)[0]
+        rms_db = librosa.amplitude_to_db(rms, ref=np.max)
+        rms_list_db = rms_db.tolist()
+        rms_list_db = [x for x in rms_list_db if x != 0]
+        db_mean = np.mean(rms_list_db)
+        db_std = np.std(rms_list_db)
 
+        # 获取文本，语速
+        text = get_text(file_path, text_model)
+        duration = AudioSegment.from_wav(file_path).duration_seconds
+        # 预测情绪
+        emotion = predict_emotion(sar_model, file_path)
+        # result.append(f"{file}:{len(text.split(' '))}  持续时间：{duration} 秒, 语速：{len(text.split(' ')) / duration} 词每秒\n {text}\nRMS平均值: {db_mean:.2f} dB \t RMS标准差: {db_std:.2f} dB\nF0平均值: {f0_mean:.2f} Hz \t F0标准差: {f0_std:.2f} Hz\n情感: {emotion}\n\n")
+        describe_audio = f"From the audio analysis, the speaker said: {text}.\n{emotion}. \nHis speech rate is {len(text.split(' ')) / duration} words per second, the average volume is {db_mean:.2f} dB \t the standard deviation of the volume is {db_std:.2f} dB. The average pitch is {f0_mean:.2f} Hz \t the standard deviation of the pitch is:{f0_std:.2f} Hz"
+        result[file]=describe_audio
+        # result[file] = {
+        #     "duration": duration,
+        #     "speed": len(text.split(' ')) / duration,
+        #     "text": text,
+        #     "rms_mean": db_mean,
+        #     "rms_std": db_std,
+        #     "f0_mean": f0_mean,
+        #     "f0_std": f0_std,
+        #     "emotion": emotion
+        # }
 
+    return result
 
-
-
-if __name__ == "__main__":
+if False:
     input_directory = r"../data/voice"  # 替换为你的输入目录
     output_json = r"./output_results.json"  # 替换为你想要保存的JSON文件路径
 
@@ -253,21 +283,16 @@ if __name__ == "__main__":
     with open(output_json, 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=4)
 
-"""
-# 示例调用
-if __name__ == "__main__":
-    model = load_model()
-    wav_file = r"../data/voice/1DCnIad1Y0w.002.wav"
-    emo_result = predict_emotion(model, wav_file)
-    loudness_result = extract_loudness(wav_file)
-    pitch_result = extract_pitch(wav_file)
-    merged_result = merge_dicts(pitch_result, loudness_result)
-    for key, value in merged_result.items():
-        print(f"{key}\t Pitch: {value['Pitch']}\t Loudness: {value['Loudness']}")
-    print(emo_result)
-    result_dict = {
-        "filename": os.path.basename(wav_file),
-        "merged_result": merged_result,
-        "emotion": emo_result
-    }
-"""
+if __name__ == '__main__':
+    file_list = os.listdir("../data/voice")
+    text_model = load_sensevoice()
+    sar_model = load_emotion2vec()
+    result = extract_audio_features(file_list,text_model,sar_model)
+    try:
+        import json
+        with open('outputs/results.json','w',encoding='utf-8') as f:
+            json.dump(result,f,ensure_ascii=False,indent=4)
+    except:
+        with open('outputs/results.txt','w',encoding='utf-8') as f:
+            for k,v in result.items():
+                f.write(f"{k}:{v}\n")
