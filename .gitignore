@@ -6,3 +6,5 @@ data
 unsloth_compiled_cache
 finetune/outputs
 lora_model
+*cache*
+*checkpoint*

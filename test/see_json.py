@@ -1,5 +1,5 @@
 import json
-filename = "../src/outputs/output_results_2.json"
+filename = "../audio_src/outputs/output_results_2.json"
 
 
 def parse_json_structure(data, parent=None):

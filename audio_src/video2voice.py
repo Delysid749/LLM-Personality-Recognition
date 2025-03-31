@@ -16,7 +16,7 @@ def extract_audio_from_video(video_dir, voice_dir, output_format="wav"):
             # 使用 ffmpeg 提取音频
             command = f'ffmpeg -i "{video_path}"  -ac 1 "{audio_path}"'
             subprocess.run(command, shell=True)
-            time.sleep(1) # 等待 ffmpeg 完成
+            # time.sleep(1) # 等待 ffmpeg 完成
 
 
 

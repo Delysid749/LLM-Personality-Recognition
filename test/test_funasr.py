@@ -13,7 +13,7 @@ model = AutoModel(
 )
 wav_file = "../data/voice/1DCnIad1Y0w.002.wav"
 
-rec_result = model.generate(wav_file, output_dir="../src/outputs", granularity="utterance", extract_embedding=False)
+rec_result = model.generate(wav_file, output_dir="../audio_src/outputs", granularity="utterance", extract_embedding=False)
 print(rec_result)
 
 #找到字典中scorse最高对应的labels
