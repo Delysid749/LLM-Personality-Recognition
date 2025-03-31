@@ -8,3 +8,4 @@ finetune/outputs
 lora_model
 *cache*
 *checkpoint*
+.unioncode
