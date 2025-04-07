@@ -4,6 +4,7 @@
   
   <script>
   /* global ARTCAICallUI */
+  import { SHARETOKEN } from '../../my_personal_key';
   export default {
     name: 'AICallComponent',
     mounted() {
@@ -13,7 +14,7 @@
     data() {
         return {
             // 
-            shareToken: 'eyJSZXF1ZXN0SWQiOiJCREMzRjFGMi1DREY4LTVCMUMtOENCMC0zNTNGQkIyMzY2OUYiLCJXb3JrZmxvd1R5cGUiOiJWb2ljZUNoYXQiLCJUZW1wb3JhcnlBSUFnZW50SWQiOiIyNjJkMzQzOTczMDM0NTRiODUzZmQ4ZDQ5ZmJmOGIwYiIsIkV4cGlyZVRpbWUiOiIyMDI1LTAzLTI4IDA3OjQwOjM4IiwiTmFtZSI6InRVajRaS2k1IiwiUmVnaW9uIjoiY24taGFuZ3pob3UifQ==',
+            shareToken: SHARETOKEN ,
             userId : '1234567890'
         };
     },

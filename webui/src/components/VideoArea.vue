@@ -21,16 +21,38 @@ export default {
     async startVideo() {
       try {
         // 获取摄像头和麦克风权限
-        this.mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        this.mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: 1280,
+            height: 720,
+            frameRate: 30,
+            // advanced: [
+            //   { codec: 'vp9' }
+            // ]
+          },
+          audio: {
+            channelCount: 2,
+            sampleRate: 48000,
+            sampleSize: 16,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            // advanced: [
+            //   { codec: 'opus' }
+            // ]
+          }
+        });
         this.$refs.videoPlayer.srcObject = this.mediaStream;
         this.isPlaying = true;
 
         // 初始化录制
-        this.mediaRecorder = new MediaRecorder(this.mediaStream);
+        this.mediaRecorder = new MediaRecorder(this.mediaStream, {
+          mimeType: 'video/webm; codecs=vp9,opus'
+        });
         this.mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) this.recordedChunks.push(event.data);
         };
-        this.mediaRecorder.start(1000); // 每秒触发录制
+        this.mediaRecorder.start(2000); // 每秒触发录制
       } catch (error) {
         console.error('无法访问摄像头:', error);
       }
@@ -44,7 +66,7 @@ export default {
     },
     saveRecording() {
       if (this.recordedChunks.length) {
-        const blob = new Blob(this.recordedChunks, { type: "video/webm" });
+        const blob = new Blob(this.recordedChunks, { type: "video/webm" ,endings:'transparent'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
@@ -53,6 +75,9 @@ export default {
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
+        
+        // 保存完成后清空已录制的片段
+        this.recordedChunks = [];
       }
     },
   },
