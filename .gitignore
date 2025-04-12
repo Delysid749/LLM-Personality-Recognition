@@ -8,3 +8,13 @@ finetune/outputs
 lora_model
 *cache*
 *checkpoint*
+project_package
+test
+.vscode
+outputs
+output
+*.wav
+*.mp3
+*.mp4
+*.flac
+*.ogg

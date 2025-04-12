@@ -7,6 +7,34 @@ from funasr.utils.postprocess_utils import rich_transcription_postprocess
 import librosa
 import numpy as np
 from pydub import AudioSegment
+from pyannote.audio import Pipeline as SpeakerDiarizationPipeline
+
+def diarize_audio(file_path, num_speakers=2, output_rttm="audio.rttm"):
+    """
+    使用pyannote/speaker-diarization-3.1模型对音频文件进行说话人分离
+
+    参数:
+        file_path (str): 输入的音频文件路径
+        num_speakers (int): 预期的说话人数量，默认为2
+        output_rttm (str): 输出的RTTM文件路径，默认为"audio.rttm"
+
+    返回:
+        None
+    """
+    speaker_diarization = SpeakerDiarizationPipeline.from_pretrained("pyannote/speaker-diarization-3.1")
+
+    # 检查文件是否存在
+    if not os.path.isfile(file_path):
+        exit("File not found: {}".format(file_path))
+
+    # 运行pipeline
+    diarization = speaker_diarization(file_path, num_speakers=num_speakers)
+
+    # 将结果写入RTTM文件
+    with open(output_rttm, "w") as rttm:
+        diarization.write_rttm(rttm)
+
+    print("Done!")
 #获取音频时长
 def get_audio_duration(file_path):
     return  AudioSegment.from_wav(file_path).duration_seconds
