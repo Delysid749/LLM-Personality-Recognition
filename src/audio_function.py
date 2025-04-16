@@ -245,65 +245,111 @@ def calculate_speech_rate(text, duration):
         speech_rate = len(text.split()) / duration
         return f"His speech rate is {speech_rate:.2f} words per second (English)"
 
-def extract_audio_features(file_list:list,text_model,sar_model):
+def extract_audio_features(file_path, text_model, sar_model):
     """
-    提取音频文件的特征信息，包括音高、响度、文本、语速和情感分析
+    提取单个音频文件的特征信息，包括音高、响度、文本、语速和情感分析
     
     参数:
-        file_list: 要处理的音频文件列表
+        file_path: 要处理的音频文件路径
         text_model: 语音识别模型
         sar_model: 情感分析模型
         
     返回:
-        包含每个音频文件分析结果的字典
+        包含音频文件分析结果的字典
     """
-    result = {}
-    for file_path in file_list:
-        file_name = os.path.basename(file_path)
-        y, sr = librosa.load(file_path, sr=22000)
-        # 提取音调音高
-        f0, voiced_flag, voiced_probs = librosa.pyin(
-            y, sr=sr,
-            fmin=librosa.note_to_hz('C2'),
-            fmax=librosa.note_to_hz('C7')
-        )
-        f0 = np.nan_to_num(f0, nan=-1.0)
-        f0_list = f0.tolist()
-        f0_list = [x for x in f0_list if x != -1.0]
-        f0_mean = np.mean(f0_list)
-        f0_std = np.std(f0_list)
-        rms = librosa.feature.rms(y=y, frame_length=2048, hop_length=512)[0]
-        rms_db = librosa.amplitude_to_db(rms, ref=np.max)
-        rms_list_db = rms_db.tolist()
-        rms_list_db = [x for x in rms_list_db if x != 0]
-        db_mean = np.mean(rms_list_db)
-        db_std = np.std(rms_list_db)
+    y, sr = librosa.load(file_path, sr=22000)
+    # 提取音调音高
+    f0, voiced_flag, voiced_probs = librosa.pyin(
+        y, sr=sr,
+        fmin=librosa.note_to_hz('C2'),
+        fmax=librosa.note_to_hz('C7')
+    )
+    f0 = np.nan_to_num(f0, nan=-1.0)
+    f0_list = f0.tolist()
+    f0_list = [x for x in f0_list if x != -1.0]
+    f0_mean = np.mean(f0_list)
+    f0_std = np.std(f0_list)
+    rms = librosa.feature.rms(y=y, frame_length=2048, hop_length=512)[0]
+    rms_db = librosa.amplitude_to_db(rms, ref=np.max)
+    rms_list_db = rms_db.tolist()
+    rms_list_db = [x for x in rms_list_db if x != 0]
+    db_mean = np.mean(rms_list_db)
+    db_std = np.std(rms_list_db)
 
-        # 获取文本，语速
-        text = get_text(file_path, text_model)
-        duration = AudioSegment.from_wav(file_path).duration_seconds
-        speech_rate_desc = calculate_speech_rate(text, duration)
-        # 预测情绪
-        emotion = predict_emotion(sar_model, file_path)
-        # result.append(f"{file}:{len(text.split(' '))}  持续时间：{duration} 秒, 语速：{len(text.split(' ')) / duration} 词每秒\n {text}\nRMS平均值: {db_mean:.2f} dB \t RMS标准差: {db_std:.2f} dB\nF0平均值: {f0_mean:.2f} Hz \t F0标准差: {f0_std:.2f} Hz\n情感: {emotion}\n\n")
-        describe_audio = f"From the audio analysis, the speaker said: {text}.\n{emotion}. \n {speech_rate_desc}, the average volume is {db_mean:.2f} dB \t the standard deviation of the volume is {db_std:.2f} dB. The average pitch is {f0_mean:.2f} Hz \t the standard deviation of the pitch is:{f0_std:.2f} Hz"
-        result[file_name]=describe_audio
+    # 获取文本，语速
+    text = get_text(file_path, text_model)
+    duration = AudioSegment.from_wav(file_path).duration_seconds
+    speech_rate_desc = calculate_speech_rate(text, duration)
+    # 预测情绪
+    emotion = predict_emotion(sar_model, file_path)
+    
+    return {
+        'text': text,
+        'duration': duration,
+        'speech_rate': speech_rate_desc,
+        'emotion': emotion,
+        'volume': {
+            'mean': db_mean,
+            'std': db_std
+        },
+        'pitch': {
+            'mean': f0_mean,
+            'std': f0_std
+        }
+    }
 
 
-    return result
 
+def audio_dict2description(audio_dict):
+    """
+    将音频特征字典转换为英文描述性文本
+    
+    参数:
+        audio_dict: extract_audio_features返回的音频特征字典
+        
+    返回:
+        英文描述性文本字符串
+    """
+    description = "Audio Analysis Results:\n"
+    description += f"Recognized Text: {audio_dict['text']}\n"
+    description += f"Audio Duration: {audio_dict['duration']:.2f} seconds\n"
+    description += f"{audio_dict['speech_rate']}\n"
+    description += f"{audio_dict['emotion']}\n"
+    description += f"Volume Information: Average {audio_dict['volume']['mean']:.2f} dB, Standard Deviation {audio_dict['volume']['std']:.2f} dB\n"
+    description += f"Pitch Information: Average {audio_dict['pitch']['mean']:.2f} Hz, Standard Deviation {audio_dict['pitch']['std']:.2f} Hz"
+    
+    return description
 
 
 if __name__ == '__main__':
-    file_list = os.listdir("../data/voice")
+    # 获取音频文件夹路径
+    folder_path = "../data/voice"
+    file_list = [os.path.join(folder_path, f) for f in os.listdir(folder_path)]
+    file_list = file_list[:5]# 测试用，非测试时删除
+    
+    # 加载模型
     text_model = load_sensevoice()
     sar_model = load_emotion2vec()
-    result = extract_audio_features(file_list,text_model,sar_model)
+    
+    # 处理所有音频文件
+    result = {}
+    for file_path in file_list:
+        # 提取音频特征
+        audio_features = extract_audio_features(file_path, text_model, sar_model)
+        # 转换为描述文本
+        description = audio_dict2description_en(audio_features)
+        # 获取文件名
+        file_name = os.path.basename(file_path)
+        # 保存结果
+        result[file_name] = description
+    
+    # 保存结果
     try:
         import json
-        with open('outputs/results.json','w',encoding='utf-8') as f:
-            json.dump(result,f,ensure_ascii=False,indent=4)
-    except:
-        with open('outputs/results.txt','w',encoding='utf-8') as f:
-            for k,v in result.items():
-                f.write(f"{k}:{v}\n")
+        with open('outputs/results.json', 'w', encoding='utf-8') as f:
+            json.dump(result, f, ensure_ascii=False, indent=4)
+    except Exception as e:
+        print(f"保存JSON文件时出错: {e}")
+        with open('outputs/results.txt', 'w', encoding='utf-8') as f:
+            for k, v in result.items():
+                f.write(f"{k}: {v}\n\n")

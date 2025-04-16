@@ -38,35 +38,56 @@ def get_big5_scores(data, video_name):
     return result
 
 def translate_big5_scores(big5_scores):
-    return f"ta的五大性格为：\n开放性：{big5_scores['openness']}\n外向型：{big5_scores['extraversion']}\n神经质：{big5_scores['neuroticism']}\n亲和性：{big5_scores['agreeableness']}\n尽责性：{big5_scores['conscientiousness']}"
-# if False:
-#     # 读取JSON文件
-#     with open('outputs/output_results.json', 'r', encoding='utf-8') as file:
-#         results = json.load(file)
-#
-#     # 更新每个字典
-#     for entry in results:
-#         filename_without_extension = os.path.splitext(entry['filename'])[0]
-#         video_name = filename_without_extension + '.mp4'
-#         big5_score = get_big5_scores(data, video_name)
-#         entry['big5_score'] = big5_score
-#
-#     # 写回JSON文件
-#     with open('outputs/output_results_2.json', 'w') as file:
-#         json.dump(results, file, indent=4)
-#
+    return f"Their Big Five personality traits are:\nOpenness: {big5_scores['openness']}\nExtraversion: {big5_scores['extraversion']}\nNeuroticism: {big5_scores['neuroticism']}\nAgreeableness: {big5_scores['agreeableness']}\nConscientiousness: {big5_scores['conscientiousness']}"
 
-with open("outputs/results.json", "r",encoding="utf-8") as f:
-    results_data = json.load(f)
+if False:
+    # 读取JSON文件
+    with open('outputs/output_results.json', 'r', encoding='utf-8') as file:
+        results = json.load(file)
+
+    # 更新每个字典
+    for entry in results:
+        filename_without_extension = os.path.splitext(entry['filename'])[0]
+        video_name = filename_without_extension + '.mp4'
+        big5_score = get_big5_scores(data, video_name)
+        entry['big5_score'] = big5_score
+
+    # 写回JSON文件
+    with open('outputs/output_results_2.json', 'w') as file:
+        json.dump(results, file, indent=4)
+#
+if False:
+    with open("../data/output/result.json", "r",encoding="utf-8") as f:
+        results_data = json.load(f)
+    result =[]
+    for key in results_data.keys():
+        filename_without_extension = os.path.splitext(key)[0]
+        video_name = filename_without_extension + '.mp4'
+        big5_score = get_big5_scores(data, video_name)
+        temp = {
+            "introduction":"What are his/her Big Five personality traits?",
+            "input":results_data[key],
+            "output":translate_big5_scores(big5_score)
+        }
+        result.append(temp)
+
+    with open("../data/results.jsonl", "w", encoding="utf-8") as f:
+        for i in result:
+            print(i)
+            f.write(json.dumps(i,ensure_ascii=False)+"\n")
+
+
+with open("../data/output/result.json", "r",encoding="utf-8") as f:
+        results_data = json.load(f)
 result =[]
-for key in results_data.keys():
-    filename_without_extension = os.path.splitext(key)[0]
-    video_name = filename_without_extension + '.mp4'
-    big5_score = get_big5_scores(data, video_name)
+for i in results_data:
+    filename = i["video_name"]
+    big5_score = get_big5_scores(data, filename)
     temp = {
-        "introduction":"ta的五大性格为？",
-        "input":results_data[key],
+        "introduction":"What are his/her Big Five personality traits?",
+        "input":i["description"],
         "output":translate_big5_scores(big5_score)
+ 
     }
     result.append(temp)
 
@@ -74,5 +95,4 @@ with open("../data/results.jsonl", "w", encoding="utf-8") as f:
     for i in result:
         print(i)
         f.write(json.dumps(i,ensure_ascii=False)+"\n")
-
 

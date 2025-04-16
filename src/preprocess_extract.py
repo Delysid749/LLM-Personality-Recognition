@@ -1,6 +1,7 @@
 import os
 from pydub import AudioSegment
 from moviepy.video.io.VideoFileClip import VideoFileClip
+from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
 
 
 def merge_rttm_intervals(file_path):
@@ -65,28 +66,52 @@ def split_media_files(merged_speakers, video_file_path, output_dir):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
-    # 遍历每个说话人区间
-    for interval in merged_speakers:
-        speaker = interval['speaker']
-        start = interval['start']
-        end = interval['end']
+    # 获取第一个说话人的ID
+    if merged_speakers:
+        first_speaker = merged_speakers[0]['speaker']
         
         # 创建说话人子目录
-        speaker_dir = os.path.join(output_dir, speaker)
+        speaker_dir = os.path.join(output_dir, first_speaker)
         if not os.path.exists(speaker_dir):
             os.makedirs(speaker_dir)
         
-        # 分割视频
-        video_segment = video.subclipped(start, end)  # 修改为使用subclip属性
-        video_filename = f"{speaker}_{start}_{end}.mp4"
-        video_output_path = os.path.join(speaker_dir, video_filename)
-        video_segment.write_videofile(video_output_path, codec="libx264")
-        
-        # 分割音频
-        audio_segment = audio.subclipped(start, end)  # 修改为使用subclip属性
-        audio_filename = f"{speaker}_{start}_{end}.wav"
-        audio_output_path = os.path.join(speaker_dir, audio_filename)
-        audio_segment.write_audiofile(audio_output_path)
+        # 处理第一个说话人的所有片段
+        for interval in merged_speakers:
+            if interval['speaker'] == first_speaker:
+                start = interval['start']
+                end = interval['end']
+                
+                # 分割视频
+                video_segment = video.subclipped(start, end)
+                video_filename = f"{first_speaker}_{start}_{end}.mp4"
+                video_output_path = os.path.join(speaker_dir, video_filename)
+                video_segment.write_videofile(video_output_path, codec="libx264")
+                
+                # 分割音频
+                audio_segment = audio.subclipped(start, end)
+                audio_filename = f"{first_speaker}_{start}_{end}.wav"
+                audio_output_path = os.path.join(speaker_dir, audio_filename)
+                audio_segment.write_audiofile(audio_output_path)
+    
+    video.close()
+
+
+def extract_middle_frame(video_file_path, output_path):
+    """
+    从视频中截取中间一帧并保存为图片
+    
+    参数:
+        video_file_path: 视频文件路径
+        output_path: 输出图片路径
+    """
+    video = VideoFileClip(video_file_path)
+    duration = video.duration
+    middle_time = duration / 2
+    frame = video.get_frame(middle_time)
+    
+    # 使用moviepy的ImageClip保存帧
+    ImageSequenceClip([frame], fps=1).save_frame(output_path)
+    video.close()
 
 
 if __name__ == '__main__':

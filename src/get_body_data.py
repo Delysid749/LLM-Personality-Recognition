@@ -12,6 +12,7 @@ from my_personal_key import ALIBABA_CLOUD_ACCESS_KEY_ID,ALIBABA_CLOUD_ACCESS_KEY
 # Please ensure that the environment variables ALIBABA_CLOUD_ACCESS_KEY_ID and ALIBABA_CLOUD_ACCESS_KEY_SECRET are set.
 # 修改credentials和auth的初始化
 credentials = AccessKeyCredential(ALIBABA_CLOUD_ACCESS_KEY_ID, ALIBABA_CLOUD_ACCESS_KEY_SECRET)
+import json
 
 
 
@@ -80,12 +81,20 @@ def generate_person_description(response_data):
     返回:
         英文描述文本字符串
     """
-    # 将二进制数据转换为字符串
-    response_str = str(response_data, encoding='utf-8')
-    
-    # 解析JSON数据
-    import json
-    data = json.loads(response_str)
+    try:
+        # 将二进制数据转换为字符串
+        response_str = str(response_data, encoding='utf-8')
+        
+        # 解析JSON数据
+        data = json.loads(response_str)
+        
+        # 检查PersonNumber是否为1
+        if data.get('Data', {}).get('PersonNumber') != 1:
+            return "Error: PersonNumber is not equal to 1"
+            
+
+    except Exception as e:
+        return f"Error generating description: {str(e)}"
     
     # 提取所需属性
     attributes = data['Data']['Attributes'][0]
@@ -115,8 +124,7 @@ def analyze_person_image(file_path):
     try:
         # 上传文件并获取URL
         image_url = upload_file_and_get_url(file_path)
-        print(f"Image URL: {image_url}")
-        time.sleep(1)
+        time.sleep(0.2)
         
         # 获取人体数据
         response_data = get_body_data(image_url)
