@@ -1,0 +1,24 @@
+# 数据处理
+pandas  # 数据处理库
+numpy  # 科学计算库
+
+# 音频处理
+librosa  # 音频处理库
+pydub  # 音频操作库
+moviepy  # 视频处理库
+
+# 语音识别和处理
+funasr  # 语音识别库
+pyannote.audio  # 语音处理库
+
+# Jupyter Notebook
+jupyter  # Jupyter Notebook 开发工具
+
+pip install aliyun-python-sdk-facebody==2.0.14
+pip install aliyun-python-sdk-core
+
+pip install oss2
+pip install aliyun-python-sdk-viapiutils
+pip install viapi-utils
+
+pip install tf-keras
