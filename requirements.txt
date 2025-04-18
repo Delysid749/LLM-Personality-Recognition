@@ -14,11 +14,11 @@ pyannote.audio  # 语音处理库
 # Jupyter Notebook
 jupyter  # Jupyter Notebook 开发工具
 
-pip install aliyun-python-sdk-facebody==2.0.14
-pip install aliyun-python-sdk-core
+aliyun-python-sdk-facebody==2.0.14
+aliyun-python-sdk-core
 
-pip install oss2
-pip install aliyun-python-sdk-viapiutils
-pip install viapi-utils
+oss2
+aliyun-python-sdk-viapiutils
+viapi-utils
 
-pip install tf-keras
+tf-keras
