@@ -93,7 +93,7 @@
 
 ### 引用
 
-本项目基于以下开源项目和模型：
+本项目基于以下开源项目，模型，api：
 
 1. **FunASR**
    - 项目地址：[https://github.com/modelscope/FunASR](https://github.com/modelscope/FunASR)
@@ -169,6 +169,32 @@
   year={2023}
 }
 ```
+5. **unsloth**
+   **模型名称：**unsloth  
+   **模型简介：**unsloth 是一个用于优化和微调大型语言模型（LLM）的工具，能够显著提升模型的性能和泛化能力。它通过高效的优化策略和灵活的微调机制，帮助用户快速调整模型以适应特定任务需求，从而实现更好的模型表现。unsloth 支持多种主流的 LLM 框架，并提供了易于使用的接口，方便用户集成到现有的模型训练和优化流程中。
+   **引用链接：**
+     [unsloth GitHub 仓库](https://github.com/unslothai/unsloth)
+     https://github.com/unslothai/unsloth
+   **引用文献：**
+```
+    @software{unsloth,
+      author = {Daniel Han, Michael Han and Unsloth team},
+      title = {Unsloth},
+      url = {http://github.com/unslothai/unsloth},
+      year = {2023}
+    }
+```
+6. **阿里云人体结构化属性 API**
+   **模型名称：**阿里云人体结构化属性 API  
+   **模型简介：**阿里云视觉智能开放平台提供的 人体结构化属性 API 是一个强大的工具，用于检测图片中人体的属性，包括性别、年龄、朝向、帽子、眼镜、包、衣服颜色等。该 API 提供了丰富的人体属性检测功能，能够为视频分析和特征提取提供重要的支持。通过高效的检测算法和优化的接口设计，该 API 能够快速、准确地返回人体属性的分析结果，适用于多种应用场景，如智能安防、视频监控、行为分析等。
+   **引用链接：**
+      [阿里云视觉智能开放平台 - 人体结构化属性 API](https://help.aliyun.com/zh/viapi/developer-reference/api-human-body-structuralization-attribute)
+      https://help.aliyun.com/zh/viapi/developer-reference/api-human-body-structuralization-attribute
+
+   
+   
+
+
 
 ### 数据集引用
 
