@@ -2,6 +2,7 @@ import os
 from pydub import AudioSegment
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
+import subprocess
 
 
 def merge_rttm_intervals(file_path):
@@ -114,29 +115,63 @@ def extract_middle_frame(video_file_path, output_path):
     video.close()
 
 
-if __name__ == '__main__':
-    # Example usage
-    file_path = '../data/ai_test_2.rttm'
-    video_file_path = '../data/ai_test_2.mp4'  # 改为视频文件路径
-    output_dir = 'outputs'  # 输出目录
+def convert_webm_to_mp4(webm_path, output_dir=None):
+    """
+    将webm格式视频转换为mp4格式
+    :param webm_path: webm视频文件路径
+    :param output_dir: 输出目录，默认为webm文件所在目录
+    :return: 转换后的mp4文件路径
+    """
+    if not os.path.exists(webm_path):
+        raise FileNotFoundError(f"Webm文件未找到: {webm_path}")
     
-    if not os.path.exists(file_path):
-        print('File not found:', file_path)
-        exit()
+    # 设置输出路径
+    if output_dir is None:
+        output_dir = os.path.dirname(webm_path)
+    os.makedirs(output_dir, exist_ok=True)
     
-    # 获取合并后的说话人区间
-    result = merge_rttm_intervals(file_path)
+    # 生成输出文件名
+    filename = os.path.splitext(os.path.basename(webm_path))[0] + ".mp4"
+    mp4_path = os.path.join(output_dir, filename)
     
-    # 打印结果
-    for item in result:
-        print(item)
+    # 使用ffmpeg进行转换
+    command = f'ffmpeg -i "{webm_path}" -c:v h264 -crf 23 -c:a aac "{mp4_path}" -y'
+    subprocess.run(command, shell=True)
     
-    # # 分割媒体文件
-    # if os.path.exists(video_file_path):
-    #     split_media_files(result, video_file_path, output_dir)
-    #     print(f"媒体分割完成，结果保存在 {output_dir} 目录")
-    # else:
-    #     print('视频文件未找到:', video_file_path)
+    return mp4_path
 
+
+if __name__ == '__main__':
+    if False:
+        # 示例用法
+
+        # Example usage
+        file_path = '../data/ai_test_2.rttm'
+        video_file_path = '../data/ai_test_2.mp4'  # 改为视频文件路径
+        output_dir = 'outputs'  # 输出目录
+        
+        if not os.path.exists(file_path):
+            print('File not found:', file_path)
+            exit()
+        
+        # 获取合并后的说话人区间
+        result = merge_rttm_intervals(file_path)
+        
+        # 打印结果
+        for item in result:
+            print(item)
+        
+        # 分割媒体文件
+        if os.path.exists(video_file_path):
+            split_media_files(result, video_file_path, output_dir)
+            print(f"媒体分割完成，结果保存在 {output_dir} 目录")
+        else:
+            print('视频文件未找到:', video_file_path)
+
+    if True:
+        webm_path = "../data/input2.webm"
+        output_dir = "../data/"  # 输出目录，默认为webm文件所在目录
+        mp4_path = convert_webm_to_mp4(webm_path, output_dir)
+        
 
 
