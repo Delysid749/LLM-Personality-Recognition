@@ -20,8 +20,7 @@ with open("../data/test.jpg","rb") as f:
     byte_data = f.read()
 
 import oss2
-endpoint = 'oss-cn-shanghai.aliyuncs.com' # 假设你的Bucket处于杭州区域
-# 修改OSS的auth初始化
+endpoint = 'oss-cn-shanghai.aliyuncs.com' 
 auth = oss2.Auth(ALIBABA_CLOUD_ACCESS_KEY_ID, ALIBABA_CLOUD_ACCESS_KEY_SECRET)
 bucket = oss2.Bucket(auth, endpoint, 'get-body-feature-fangfangfang')
 
@@ -144,6 +143,18 @@ def analyze_person_image(file_path):
 # 修改后的主程序
 if __name__ == "__main__":
     # 示例用法
-    description = analyze_person_image("../data/test.jpg")
+    description = analyze_person_image("../data/middle_frame.jpg")
+    # description = analyze_person_image("../data/test.jpg")
     print(description)
-
+    # file_path = "../data/middle_frame.jpg"
+    # try:
+    #     # 上传文件并获取URL
+    #     image_url = upload_file_and_get_url(file_path)
+    #     print(image_url)
+    #     time.sleep(0.2)
+    # except Exception as e:
+    #     print(e)
+    # finally:
+    #     # 删除上传的文件
+    #     file_name = os.path.basename(file_path)
+    #     bucket.delete_object(file_name)

@@ -5,11 +5,25 @@ from get_body_data import analyze_person_image
 from preprocess_extract import merge_rttm_intervals, split_media_files,extract_middle_frame
 import json
 from predict import AIChatBot
+import shutil
 
 
 
-
-def process_video(video_path, output_dir="outputs"):
+def analyse_dialogue_first(video_path, output_dir="outputs"):
+    """
+    分析视频对话的主要处理函数
+    1. 从视频中提取音频
+    2. 进行说话人分离
+    3. 合并说话人区间并分割音视频
+    4. 对第一个说话人的音频片段进行特征提取和分析
+    5. 结合视频分析生成综合描述
+    6. 保存分析结果
+    注意，运行程序后会生成一个名为output_dir所指向的目录，用于保存所有输出文件，注意手动清除缓存。
+    
+    :param video_path: 输入视频文件路径
+    :param output_dir: 输出目录，默认为"outputs"
+    :return: 包含所有分析结果的特征字典
+    """
     # 确保输出目录存在
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -88,9 +102,6 @@ def process_video(video_path, output_dir="outputs"):
     return features
     
 
-
-
-
 def predict_personality(features, chatbot):
     """
     根据分析结果预测性格
@@ -132,18 +143,85 @@ def predict_personality(features, chatbot):
     print(f"性格预测完成，结果保存在 {result_path}")
     return results
 
-# 在main函数中使用示例
-if __name__ == "__main__":
-    video_path = "../data/output2.mp4"  # 替换为你的视频路径
-    features = process_video(video_path)
-    # with open('outputs/results.json', 'r', encoding='utf-8') as f:
-    #     features = json.load(f)
-    
+def clear_cache(output_dir="outputs"):
+    """
+    清除指定目录下的所有缓存文件
+    :param output_dir: 要清除的目录，默认为"outputs"
+    """
+    if os.path.exists(output_dir):
+        for root, dirs, files in os.walk(output_dir):
+            for file in files:
+                os.remove(os.path.join(root, file))
+            for dir in dirs:
+                shutil.rmtree(os.path.join(root, dir))
+        print(f"已清除缓存目录: {output_dir}")
+    else:
+        print(f"缓存目录 {output_dir} 不存在")
+
+
+def analyze_introduction_video(video_path, chatbot,text_model,sar_model, output_dir="outputs"):
+    """
+    分析自我介绍视频并预测性格
+    :param video_path: 自我介绍视频路径
+    :param chatbot: 已初始化的AIChatBot实例
+    :param output_dir: 输出目录，默认为"outputs"
+    :return: AI输出的性格预测结果
+    """
+    # 确保输出目录存在
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print(f"已创建输出目录: {output_dir}")
+    # 从视频中提取音频
+    print("正在提取音频...")
+    video_filename = os.path.basename(video_path)
+    audio_filename = os.path.splitext(video_filename)[0] + ".wav"
+    audio_path = os.path.join(output_dir, audio_filename)
+    extract_audio(video_path, voice_dir=output_dir)
+    print(f"音频已成功提取并保存到: {audio_path}")
+    # 提取音频特征并生成描述
+    print("正在分析音频...")
+    audio_features = extract_audio_features(audio_path, text_model, sar_model)
+    audio_description = audio_dict2description(audio_features)
+    # 提取视频中间帧并分析
+    print("正在分析视频...")
+    frame_path = os.path.join(output_dir, "middle_frame.jpg")
+    extract_middle_frame(video_path, frame_path)
+    video_description = analyze_person_image(frame_path)
+    # 合并描述
+    combined_description = f"Audio Analysis:\n{audio_description}\n\nVideo Analysis:\n{video_description}"
+    # 进行性格预测
+    print("正在进行性格预测...")
+    features = {"introduction": combined_description}
+    personality_result = predict_personality(features, chatbot)
+    return personality_result["introduction"]
+
+
+def demo_1(video_path = "../data/ai_test_2.mp4" ):
+    clear_cache()
+    features = analyse_dialogue_first(video_path)
     # 初始化chatbot
     chatbot = AIChatBot(model_path="../finetune/lora_model")
-    
     # 进行性格预测
     personality_results = predict_personality(features, chatbot)
+    print("\n"*5+"-"*50)
     print("性格预测结果：")
     for  prediction in personality_results.values():
         print(prediction)
+    print("-"*50)
+    clear_cache()
+
+def demo_2(video_path = "..\\data\\video\\0G9vplL8ae8.001.mp4" ):
+    clear_cache()
+    print("正在加载模型...")
+    text_model = load_sensevoice()
+    sar_model = load_emotion2vec()
+    chatbot = AIChatBot(model_path="../finetune/lora_model")
+    result = analyze_introduction_video(video_path, chatbot,text_model,sar_model)
+    print("\n"*5+"-"*50)
+    print("性格预测结果：")
+    print(result)
+    print("-"*50)
+# 在main函数中使用示例
+if __name__ == "__main__":
+    demo_2()
+
