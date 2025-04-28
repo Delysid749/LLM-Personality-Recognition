@@ -192,15 +192,10 @@
 
 本项目使用了 **First Impressions V2 (CVPR'17)** 数据集，该数据集由 ChaLearn 提供，包含从 YouTube 高清视频中提取的 10,000 个视频片段，平均时长为 15 秒。数据集分为训练集、验证集和测试集，比例为 3:1:1。视频中的人物具有不同的性别、年龄、国籍和种族。数据集的标注基于五大人格特质（Extraversion、Agreeableness、Conscientiousness、Neuroticism 和 Openness），通过 Amazon Mechanical Turk (AMT) 生成，确保了标注的可靠性。此外，数据集还扩展了新的语言数据（转录文本）和新的面试标注（job-interview variable），以补充现有的感官数据（视频）和人格特质标注。
 
-引用文献：
+引用：
 
 ```
-@inproceedings{escalante2017first,
-  title={First Impressions V2: A Large-Scale Dataset for Apparent Personality Analysis},
-  author={Escalante, H. Jair and Escalera, Sergio and Guyon, Isabelle},
-  booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
-  year={2017}
-}
+Escalante, H. J.; Kaya, H.; Salah, A. A.; Escalera, S.; Gucluturk, Y.; Guclu, U.; Baró, X.; Guyon, I.; Jacques Junior, J. C. S.; Madadi, M.; Ayache, S.; Viegas, E.; Gurpinar, F.; Wicaksana, A.S.; Liem, C.C.S.; van Gerven, M. A. J.; van Lier, R. "Modeling, Recognizing, and Explaining Apparent Personality from Videos," IEEE Transactions on Affective Computing (TAC), 2020.
 ```
 
 
