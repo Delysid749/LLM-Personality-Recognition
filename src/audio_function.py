@@ -239,11 +239,11 @@ def calculate_speech_rate(text, duration):
         # 中文：统计有效字符数
         chinese_chars = [char for char in text if '\u4e00' <= char <= '\u9fff']
         speech_rate = len(chinese_chars) / duration
-        return f"His speech rate is {speech_rate:.2f} Chinese characters per second (Chinese)"
+        return f"Speech rate is {speech_rate:.2f} Chinese characters per second (Chinese)"
     else:
         # 英文：统计单词数
         speech_rate = len(text.split()) / duration
-        return f"His speech rate is {speech_rate:.2f} words per second (English)"
+        return f"Speech rate is {speech_rate:.2f} words per second (English)"
 
 def extract_audio_features(file_path, text_model, sar_model):
     """
@@ -320,36 +320,49 @@ def audio_dict2description(audio_dict):
     
     return description
 
+if False:
+    pass
+    # 获取音频文件夹路径
+    # folder_path = "../data/voice"
+    # file_list = [os.path.join(folder_path, f) for f in os.listdir(folder_path)]
+    # file_list = file_list[:5]# 测试用，非测试时删除
+    
+    # # 加载模型
+    # text_model = load_sensevoice()
+    # sar_model = load_emotion2vec()
+    
+    # # 处理所有音频文件
+    # result = {}
+    # for file_path in file_list:
+    #     # 提取音频特征
+    #     audio_features = extract_audio_features(file_path, text_model, sar_model)
+    #     # 转换为描述文本
+    #     description = audio_dict2description(audio_features)
+    #     # 获取文件名
+    #     file_name = os.path.basename(file_path)
+    #     # 保存结果
+    #     result[file_name] = description
+    
+    # # 保存结果
+    # try:
+    #     import json
+    #     with open('outputs/results.json', 'w', encoding='utf-8') as f:
+    #         json.dump(result, f, ensure_ascii=False, indent=4)
+    # except Exception as e:
+    #     print(f"保存JSON文件时出错: {e}")
+    #     with open('outputs/results.txt', 'w', encoding='utf-8') as f:
+    #         for k, v in result.items():
+    #             f.write(f"{k}: {v}\n\n")
+
 
 if __name__ == '__main__':
-    # 获取音频文件夹路径
-    folder_path = "../data/voice"
-    file_list = [os.path.join(folder_path, f) for f in os.listdir(folder_path)]
-    file_list = file_list[:5]# 测试用，非测试时删除
-    
+    # 测试音频文件路径
+    test_file_list = os.listdir("../data/voice")[5:11]
+    audio_dir = "../data/voice/" 
+    file_list = [audio_dir + file for file in test_file_list]
     # 加载模型
     text_model = load_sensevoice()
     sar_model = load_emotion2vec()
-    
-    # 处理所有音频文件
-    result = {}
-    for file_path in file_list:
-        # 提取音频特征
-        audio_features = extract_audio_features(file_path, text_model, sar_model)
-        # 转换为描述文本
-        description = audio_dict2description(audio_features)
-        # 获取文件名
-        file_name = os.path.basename(file_path)
-        # 保存结果
-        result[file_name] = description
-    
-    # 保存结果
-    try:
-        import json
-        with open('outputs/results.json', 'w', encoding='utf-8') as f:
-            json.dump(result, f, ensure_ascii=False, indent=4)
-    except Exception as e:
-        print(f"保存JSON文件时出错: {e}")
-        with open('outputs/results.txt', 'w', encoding='utf-8') as f:
-            for k, v in result.items():
-                f.write(f"{k}: {v}\n\n")
+    for i in file_list:
+        audio_features = extract_audio_features(i, text_model, sar_model)
+        print(audio_features)

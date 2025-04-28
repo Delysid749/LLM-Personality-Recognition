@@ -6,6 +6,7 @@ from preprocess_extract import merge_rttm_intervals, split_media_files,extract_m
 import json
 from predict import AIChatBot
 import shutil
+import re
 
 
 
@@ -196,19 +197,56 @@ def analyze_introduction_video(video_path, chatbot,text_model,sar_model, output_
     return personality_result["introduction"]
 
 
-def demo_1(video_path = "../data/ai_test_2.mp4" ):
+def main_dialogue_first(video_path = "../data/ai_test_2.mp4" ):
     clear_cache()
     features = analyse_dialogue_first(video_path)
+    # 提取duration的正则表达式
+    duration_pattern = r"Audio Duration: (\d+\.\d+) seconds"
+    # 提取speech_rate的正则表达式
+    speech_rate_pattern = r"Speech rate is (\d+\.\d+) (?:Chinese characters|words) per second"
+    # 计算每个片段的文本量
+    text_volumes = {}
+    for file_name, description in features.items():
+        # 提取duration
+        duration_match = re.search(duration_pattern, description)
+        duration = float(duration_match.group(1)) if duration_match else 0
+        
+        # 提取speech_rate
+        rate_match = re.search(speech_rate_pattern, description)
+        speech_rate = float(rate_match.group(1)) if rate_match else 0
+        
+        # 计算文本量
+        text_volumes[file_name] = duration * speech_rate
+    
     # 初始化chatbot
     chatbot = AIChatBot(model_path="../finetune/lora_model")
     # 进行性格预测
     personality_results = predict_personality(features, chatbot)
-    print("\n"*5+"-"*50)
+
+    traits_dicts = {}
+    for file_name, result in personality_results.items():
+        traits_dicts[file_name] = chatbot.get_scores_from_text(result)
+    total_text_volume = sum(text_volumes.values())
+    weighted_scores = {
+        'Openness': 0,
+        'Conscientiousness': 0,
+        'Extraversion': 0,
+        'Agreeableness': 0,
+        'Neuroticism': 0
+    }
+
+    # 计算加权分数
+    for file_name in text_volumes.keys():
+        weight = text_volumes[file_name] / total_text_volume
+        print(f"片段 {file_name} 的权重为 {weight:.2f}, 性格预测结果为 {traits_dicts[file_name]}")
+        for trait, score in traits_dicts[file_name].items():
+            weighted_scores[trait] += score * weight
+    for trait in weighted_scores.keys():
+        weighted_scores[trait] = round(weighted_scores[trait], 3)
+    print("\n" + "-" * 50)
     print("性格预测结果：")
-    for  prediction in personality_results.values():
-        print(prediction)
-    print("-"*50)
-    clear_cache()
+    print(weighted_scores)
+    print("-" * 50)
 
 def demo_2(video_path = "..\\data\\video\\0G9vplL8ae8.001.mp4" ):
     clear_cache()
@@ -223,5 +261,5 @@ def demo_2(video_path = "..\\data\\video\\0G9vplL8ae8.001.mp4" ):
     print("-"*50)
 # 在main函数中使用示例
 if __name__ == "__main__":
-    demo_2()
+    main_dialogue_first()
 
