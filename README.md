@@ -195,7 +195,12 @@
 引用：
 
 ```
-Escalante, H. J.; Kaya, H.; Salah, A. A.; Escalera, S.; Gucluturk, Y.; Guclu, U.; Baró, X.; Guyon, I.; Jacques Junior, J. C. S.; Madadi, M.; Ayache, S.; Viegas, E.; Gurpinar, F.; Wicaksana, A.S.; Liem, C.C.S.; van Gerven, M. A. J.; van Lier, R. "Modeling, Recognizing, and Explaining Apparent Personality from Videos," IEEE Transactions on Affective Computing (TAC), 2020.
+@inproceedings{escalante2017first,
+  title={First Impressions V2: A Large-Scale Dataset for Apparent Personality Analysis},
+  author={Escalante, H. Jair and Escalera, Sergio and Guyon, Isabelle},
+  booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year={2017}
+}
 ```
 
 
