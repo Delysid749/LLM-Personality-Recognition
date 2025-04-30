@@ -1,6 +1,7 @@
 from unsloth import FastLanguageModel
 import torch
 import json
+import re
 
 class AIChatBot:
     def __init__(self, model_path, max_seq_length=2048, dtype=None, load_in_4bit=True):
@@ -23,7 +24,7 @@ class AIChatBot:
             load_in_4bit = load_in_4bit,
         )
         
-    def generate_response(self, message, max_new_tokens=512, temperature=0.7, top_p=0.9):
+    def generate_response(self, message, max_new_tokens=512, temperature=0.75, top_p=0.9):
         """
         生成AI回复
         :param message: 输入消息
@@ -45,6 +46,27 @@ class AIChatBot:
         )
         
         return self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+    def get_scores_from_text(self,text: str) -> dict:
+        """从文本中提取大五人格特质分数
+        
+        Args:
+            text: 包含特质分数的文本
+            
+        Returns:
+            dict: 包含特质名称和对应分数的字典
+        """
+        traits = ["Openness", "Conscientiousness", "Extraversion", "Agreeableness", "Neuroticism"]
+        pattern = r"[-\s*]*\b({})\b[^:\n]*[:：]\s*(\d+\.\d+)"
+        compiled_pattern = re.compile(pattern.format("|".join(traits)), re.IGNORECASE)
+        
+        traits_dict = {}
+        for name, score in compiled_pattern.findall(text):
+            normalized_name = name.strip().capitalize()
+            if normalized_name in traits:
+                traits_dict[normalized_name] = float(score)
+        
+        return traits_dict
 
 # 示例用法
 if __name__ == "__main__":

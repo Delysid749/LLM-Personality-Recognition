@@ -45,14 +45,14 @@ export default {
         this.$refs.videoPlayer.srcObject = this.mediaStream;
         this.isPlaying = true;
 
-        // 初始化录制
-        this.mediaRecorder = new MediaRecorder(this.mediaStream, {
-          mimeType: 'video/webm; codecs=vp9,opus'
-        });
-        this.mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) this.recordedChunks.push(event.data);
-        };
-        this.mediaRecorder.start(2000); // 每秒触发录制
+        // // 初始化录制
+        // this.mediaRecorder = new MediaRecorder(this.mediaStream, {
+        //   mimeType: 'video/webm; codecs=vp9,opus'
+        // });
+        // this.mediaRecorder.ondataavailable = (event) => {
+        //   if (event.data.size > 0) this.recordedChunks.push(event.data);
+        // };
+        // this.mediaRecorder.start(2000); // 每秒触发录制
       } catch (error) {
         console.error('无法访问摄像头:', error);
       }

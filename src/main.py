@@ -10,7 +10,7 @@ import re
 
 
 
-def analyse_dialogue_first(video_path, output_dir="outputs"):
+def analyse_dialogue_first(video_path,text_model,sar_model, output_dir="outputs"):
     """
     分析视频对话的主要处理函数
     1. 从视频中提取音频
@@ -59,19 +59,9 @@ def analyse_dialogue_first(video_path, output_dir="outputs"):
     print("开始处理每个说话人的音频片段...")
     speaker = merged_intervals[0]['speaker']  
     speaker_dir = os.path.join(output_dir, speaker)
-
-    # 加载模型
-    print("正在加载语音识别和情感分析模型...")
-    text_model = load_sensevoice()
-    sar_model = load_emotion2vec()
-    print("模型加载完成")
-    
-    # 开启双线程，一个线程处理音频，一个线程处理视频
-
     if os.path.exists(speaker_dir):
         audio_files = [f for f in os.listdir(speaker_dir) if f.endswith('.wav')]
         audio_files = [os.path.join(speaker_dir, f) for f in audio_files]
-        
         # 提取音频特征
         print(f"正在分析说话人 {speaker} 的音频片段...")
         features = {}
@@ -85,9 +75,9 @@ def analyse_dialogue_first(video_path, output_dir="outputs"):
                 frame_file = os.path.join(speaker_dir, file_name.replace('.wav', '.jpg'))
                 extract_middle_frame(video_file, frame_file)
                 video_description = analyze_person_image(frame_file)
-                combined_description = f"Audio Analysis:\n{audio_description}\n\nVideo Analysis:\n{video_description}"
+                combined_description = f"{audio_description}\n\nVideo Analysis:\n{video_description}"
             else:
-                combined_description = f"Audio Analysis:\n{audio_description}\n\nVideo Analysis: No video file found"
+                combined_description = f"{audio_description}\n\nVideo Analysis: No video file found"
             
             features[file_name] = combined_description
         print("所有音频片段处理完成")
@@ -189,17 +179,22 @@ def analyze_introduction_video(video_path, chatbot,text_model,sar_model, output_
     extract_middle_frame(video_path, frame_path)
     video_description = analyze_person_image(frame_path)
     # 合并描述
-    combined_description = f"Audio Analysis:\n{audio_description}\n\nVideo Analysis:\n{video_description}"
+    combined_description = f"{audio_description}\n\nVideo Analysis:\n{video_description}"
     # 进行性格预测
     print("正在进行性格预测...")
     features = {"introduction": combined_description}
     personality_result = predict_personality(features, chatbot)
-    return personality_result["introduction"]
+    try:
+        big5_score = chatbot.get_scores_from_text(personality_result["introduction"])
+        print(personality_result["introduction"])
+        return big5_score
+    except:
+        return personality_result["introduction"]
 
 
-def main_dialogue_first(video_path = "../data/ai_test_2.mp4" ):
+def main_dialogue_first(video_path,chatbot,text_model,sar_model, output_dir="outputs"):
     clear_cache()
-    features = analyse_dialogue_first(video_path)
+    features = analyse_dialogue_first(video_path, text_model,sar_model, output_dir)
     # 提取duration的正则表达式
     duration_pattern = r"Audio Duration: (\d+\.\d+) seconds"
     # 提取speech_rate的正则表达式
@@ -217,9 +212,6 @@ def main_dialogue_first(video_path = "../data/ai_test_2.mp4" ):
         
         # 计算文本量
         text_volumes[file_name] = duration * speech_rate
-    
-    # 初始化chatbot
-    chatbot = AIChatBot(model_path="../finetune/lora_model")
     # 进行性格预测
     personality_results = predict_personality(features, chatbot)
 
@@ -247,6 +239,19 @@ def main_dialogue_first(video_path = "../data/ai_test_2.mp4" ):
     print("性格预测结果：")
     print(weighted_scores)
     print("-" * 50)
+    return weighted_scores
+
+def demo_1(video_path = "..\\data\\video\\0G9vplL8ae8.001.mp4" ):
+    clear_cache()
+    print("正在加载模型...")
+    text_model = load_sensevoice()
+    sar_model = load_emotion2vec()
+    chatbot = AIChatBot(model_path="../finetune/lora_model")
+    result = main_dialogue_first(video_path, chatbot,text_model,sar_model)
+    print("\n"*5+"-"*50)
+    print("性格预测结果：")
+    print(result)
+    print("-"*50)
 
 def demo_2(video_path = "..\\data\\video\\0G9vplL8ae8.001.mp4" ):
     clear_cache()
@@ -261,5 +266,6 @@ def demo_2(video_path = "..\\data\\video\\0G9vplL8ae8.001.mp4" ):
     print("-"*50)
 # 在main函数中使用示例
 if __name__ == "__main__":
-    main_dialogue_first()
+    demo_2()
+
 

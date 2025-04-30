@@ -1,9 +1,9 @@
 <template>
   <div class="button-area">
     <!-- 使用 $emit 触发自定义事件 -->
-    <button @click="$emit('start')">开始</button>
-    <button @click="$emit('end')">结束</button>
-    <button @click="$emit('save')">保留</button>
+    <button @click="$emit('start')">start</button>
+    <button @click="$emit('end')">stop</button>
+    <!-- <button @click="$emit('save')">保留</button> -->
   </div>
 </template>
 
